@@ -24,11 +24,28 @@ class Cluster{
 		vector<Point> setOfPoints;
 	protected:
 	public:
-		Cluster(Point _center){
+		Cluster(Point _center)
+		{
 			center = _center;
 		}
-		Point getCenter(){
+		Point getCenter() const
+		{
 			return center;
+		}
+		vector<Point> getSetOfPoints() const
+		{
+			return setOfPoints;
+		}
+		void addPoint(const Point& p)
+		{
+			setOfPoints.push_back(p);
+		}
+		void printPoints() const
+		{
+			for(size_t i = 0; i < setOfPoints.size(); ++i)
+			{
+				cout<<setOfPoints[i].first<<" "<<setOfPoints[i].second<<endl;
+			}
 		}
 };
 
@@ -45,6 +62,23 @@ void findCenter()
 double findDist(const Point& p1,const Point& p2)
 {
 	return (p2.first - p1.first)*(p2.first - p1.first) + (p2.second - p1.second)*(p2.second - p1.second);
+}
+
+size_t findClosestCluster(vector<Cluster> c, const Point& p)
+{
+	double currentDist = findDist(p, c[0].getCenter());
+	size_t index = 0;
+	//using for loop to find the index
+	for(size_t i = 1; i < c.size(); ++i)
+	{
+		double dist = findDist(p,c[i].getCenter());
+		if(currentDist > dist)
+		{
+			currentDist = dist;
+			index = i;
+		}
+	}
+	return index;
 }
 
 int main()
@@ -79,7 +113,7 @@ int main()
 	if(fileExist)
 	{
 		//The number of clusters
-		int k = 0;
+		size_t k = 0;
 		do{
 			cin>>k;
 		}while(k <= 0 || k > points.size());
@@ -92,7 +126,7 @@ int main()
 		//find the center of each cluster
 		//This algorithm will be slow for high number of clusters
 		srand (time(NULL));
-		for(int i = 0; i < k; ++i)
+		for(size_t i = 0; i < k; ++i)
 		{
 			//get a random k points from the vector of points
 			size_t pointIndex = rand()%points.size();
@@ -111,10 +145,37 @@ int main()
 			}
 		}
 		//We found our centeres and created k clusters
-		for(int i = 0;i<clusters.size();i++){
-			cout<<clusters[i].getCenter().first<<" "<<clusters[i].getCenter().second<<endl;
+		//Adding points to clusters	
+		for(auto it = points.begin();it != points.end(); ++it)
+		{
+			bool hasPoint = false;
+			//find if the point is a center of a cluster
+			for(size_t i = 0; i < clusters.size(); ++i)
+			{
+				//Check if the point is already a center of a cluster
+				//If the point is a center
+				//Do not add it to the set of points of that cluster
+				if(*it == clusters[i].getCenter())
+				{
+					hasPoint = true;
+					break;
+				}
+			}
+			if(hasPoint)
+			{
+				continue;
+			}
+			//add all the points only if they are not the center of a cluster
+			//find the closest cluster center for that point
+			//add the point to that cluster set of points
+			size_t index = findClosestCluster(clusters, *it);
+			clusters[index].addPoint(*it);
 		}
-		
+
+		for(size_t i = 0;i<clusters.size();i++){
+			cout<<"The center is: "<<clusters[i].getCenter().first<<" "<<clusters[i].getCenter().second<<endl;
+			clusters[i].printPoints();
+		}
 	}
 	//otherwise quit the program
 	return 0;
