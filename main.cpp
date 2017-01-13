@@ -150,11 +150,6 @@ int partition(vector<Cluster>& c,vector<Point>& points)
 	return -1;	
 }
 
-void writeToFile(string filename, vector<Cluster>& clusters)
-{
-
-}
-
 void clusterize(vector<Cluster>& clusters,vector<Point> points)
 {
 	for(size_t i = 0; i < clusters.size(); ++i)
@@ -195,6 +190,22 @@ void clusterize(vector<Cluster>& clusters,vector<Point> points)
 	else
 	{
 		clusterize(clusters, points);
+	}
+}
+
+void writeToFile(const string& filename,const vector<Cluster>& clusters)
+{
+	ofstream file(filename.c_str(), ofstream::out);
+	for(size_t i = 0; i < clusters.size(); ++i)
+	{
+		file << i + 1<<": " << endl;
+		file << "Center: " << clusters[i].getCenter().first<<" " << clusters[i].getCenter().second << endl;
+		vector<Point> points = clusters[i].getSetOfPoints();
+		for(auto it = points.begin(); it != points.end(); ++it)
+		{
+			file << (*it).first << " " << (*it).second << endl;
+		}
+		file << endl;
 	}
 }
 
@@ -263,12 +274,7 @@ int main()
 		}
 		//We found our centeres and created k clusters
 		clusterize(clusters, points);
-
-	for(size_t i = 0;i<clusters.size();i++){
-		cout<<"The center is: "<<clusters[i].getCenter().first<<" "<<clusters[i].getCenter().second<<endl;
-		clusters[i].printPoints();
-	}
-
+		writeToFile("result.txt", clusters);
 	}
 	//if the file does not exist quit the program
 	return 0;
