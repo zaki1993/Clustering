@@ -7,6 +7,7 @@
 #include <algorithm> //std::find
 #include <cmath> //abs
 #include <string>
+#include <limits> //numeric_limits
 
 using std::cout;
 using std::cin;
@@ -17,9 +18,15 @@ using std::ofstream;
 using std::vector;
 using std::find;
 using std::string;
+using std::numeric_limits;
 
 // -std=c++11 needed for Linux
 using Point = pair<double, double>;
+
+bool comparePoints(const Point& p1, const Point& p2)
+{
+	return (p1.first == p2.first) && (p1.second == p2.second);
+}
 
 // create a Cluster class to store cluster data
 // cluster data: center, set of points
@@ -33,22 +40,40 @@ class Cluster{
 		{
 			center = _center;
 		}
+
 		Point getCenter() const
 		{
 			return center;
 		}
+
 		void setCenter(const Point& p)
 		{
 			center = p;
 		}
+
 		vector<Point> getSetOfPoints() const
 		{
 			return setOfPoints;
 		}
+
 		void addPoint(const Point& p)
 		{
 			setOfPoints.push_back(p);
 		}
+
+		void removePoint(const Point& p)
+		{
+			//find the element position
+			for(size_t i = 0; i < setOfPoints.size(); ++i)
+			{
+				if(comparePoints(setOfPoints[i], p))
+				{
+					setOfPoints.erase(setOfPoints.begin() + i);
+					return;
+				}
+			}
+		}
+
 		void printPoints() const
 		{
 			for(size_t i = 0; i < setOfPoints.size(); ++i)
@@ -56,6 +81,7 @@ class Cluster{
 				cout<<setOfPoints[i].first<<" "<<setOfPoints[i].second<<endl;
 			}
 		}
+
 		void clearCluster()
 		{
 			while(!setOfPoints.empty())
@@ -72,6 +98,7 @@ double findDist(const Point& p1,const Point& p2)
 
 size_t findClosestCluster(vector<Cluster> c, const Point& p)
 {
+	//get the max value of double type
 	double currentDist = findDist(p, c[0].getCenter());
 	size_t index = 0;
 	//use for loop to find the index
@@ -87,110 +114,76 @@ size_t findClosestCluster(vector<Cluster> c, const Point& p)
 	return index;
 }
 
-Point findCenter(vector<Point> points, Point center)
+Point findCenter(const vector<Point>& points,const Point& center)
 {
-	//find the avarage point coordinates
-	double avgX = center.first;
-	double avgY = center.second;
+	//calculate for the other points
+	double minDist = numeric_limits<double>::max();
+	int index = 0;
+	for(size_t i = 0; i < points.size(); ++i)
+	{
+		double temp = findDist(center, points[i]);
+		for(size_t j = 0; j < points.size(); ++j)
+		{
+			temp += findDist(points[i],points[j]);
+		}
+		if(minDist > temp)
+		{
+			minDist = temp;
+			index = i;
+		}
+	}
+	//calculate for the center now
+	double temp = 0;
 	for(auto it = points.begin(); it != points.end(); ++it)
 	{
-		avgX += (*it).first;
-		avgY += (*it).second;
+		temp += findDist(center, *it);
 	}
-	avgX /= (points.size() + 1);
-	avgY /= (points.size() + 1);
-
-	return Point(avgX,avgY);
+	if(minDist > temp)
+	{
+		return center;
+	}
+	return points[index];
 }
 
-bool comparePoints(const Point& p1, const Point& p2)
+void clusterize(vector<Cluster>& c,vector<Point> points)
 {
-	return (p1.first == p2.first) && (p1.second == p2.second);
-}
-
-int partition(vector<Cluster>& c,vector<Point>& points)
-{
-	//find the avarage Point coordinates
-	vector<Point> centeres;
+	bool swap = false;
 	for(size_t i = 0; i < c.size(); ++i)
 	{
 		Point currentCenter = c[i].getCenter();
 		vector<Point> currentPoints = c[i].getSetOfPoints();
 		Point newCenter = findCenter(currentPoints, currentCenter);
-		if(comparePoints(newCenter, currentCenter))
+		if(!comparePoints(newCenter, currentCenter))
 		{
-			centeres.push_back(currentCenter);
-		}
-		else
-		{
-			centeres.push_back(newCenter);
-		}
-	}
-	//check if the center has a change
-	bool centerChange = false;
-	for(size_t i = 0; i < centeres.size(); ++i)
-	{
-		Point currentCenter = c[i].getCenter();
-		if(!comparePoints(centeres[i], currentCenter))
-		{
-			centerChange = true;
-			c[i].setCenter(centeres[i]);
-			if(find(points.begin(), points.end(), currentCenter) == points.end())
+			c[i].addPoint(currentCenter);
+			c[i].setCenter(newCenter);
+			c[i].removePoint(newCenter);
+			//check if a point will change it's cluster
+			vector<Point> set = c[i].getSetOfPoints();
+			for(auto it = set.begin(); it != set.end(); ++it)
 			{
-				points.push_back(currentCenter);
+				//check if the cluster is the same
+				size_t index = findClosestCluster(c, *it);
+				if(i != index)
+				{
+					//the clusters are different
+					//change the cluster
+					c[index].addPoint(*it);
+					c[i].removePoint(*it);
+					//the point change it's cluster
+					//we have a swap
+					//repeat the algorithm
+					swap = true;
+				}
 			}
 		}
 	}
-	if(!centerChange)
+	if(swap)
 	{
-		//We have no change in the clusters center
-		//Everything is done!
-		return 0;
+		clusterize(c, points);
 	}
-	return -1;	
-}
-
-void clusterize(vector<Cluster>& clusters,vector<Point> points)
-{
-	for(size_t i = 0; i < clusters.size(); ++i)
-	{
-		clusters[i].clearCluster();
-	}
-	for(auto it = points.begin();it != points.end(); ++it)
-	{
-		bool hasPoint = false;
-		//find if the point is a center of a cluster
-		for(size_t i = 0; i < clusters.size(); ++i)
-		{
-			//Check if the point is already a center of a cluster
-			//If the point is a center
-			//Do not add it to the set of points of that cluster
-			if(*it == clusters[i].getCenter())
-			{
-				hasPoint = true;
-				break;
-			}
-		}
-		if(hasPoint)
-		{
-			continue;
-		}
-		//add all the points only if they are not the center of a cluster
-		//find the closest cluster center for that point
-		//add the point to that cluster set of points
-		size_t index = findClosestCluster(clusters, *it);
-		clusters[index].addPoint(*it);
-	}
-	//Call the partition function
-	int res = partition(clusters, points);
-	if(res == 0)
-	{
-		return;
-	}
-	else
-	{
-		clusterize(clusters, points);
-	}
+	//We have no change in the clusters center
+	//Everything is done!
 }
 
 void writeToFile(const string& filename,const vector<Cluster>& clusters)
@@ -252,7 +245,6 @@ int main()
 		//create a vector of ints that cointains the indexes of the points
 		vector<size_t> pointsIndexes;
 		//find the center of each cluster
-		//This algorithm will be slow for high number of clusters
 		srand (time(NULL));
 		for(size_t i = 0; i < k; ++i)
 		{
@@ -271,6 +263,31 @@ int main()
 				//this one is already a center of a cluster
 				i--;
 			}
+		}
+		for(auto it = points.begin();it != points.end(); ++it)
+		{
+			bool hasPoint = false;
+			//find if the point is a center of a cluster
+			for(size_t i = 0; i < clusters.size(); ++i)
+			{
+				//Check if the point is already a center of a cluster
+				//If the point is a center
+				//Do not add it to the set of points of that cluster
+				if(*it == clusters[i].getCenter())
+				{
+					hasPoint = true;
+					break;
+				}
+			}
+			if(hasPoint)
+			{
+				continue;
+			}
+			//add all the points only if they are not the center of a cluster
+			//find the closest cluster center for that point
+			//add the point to that cluster set of points
+			size_t index = findClosestCluster(clusters, *it);
+			clusters[index].addPoint(*it);
 		}
 		//We found our centeres and created k clusters
 		clusterize(clusters, points);
