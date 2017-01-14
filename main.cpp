@@ -78,7 +78,7 @@ class Cluster{
 		{
 			for(size_t i = 0; i < setOfPoints.size(); ++i)
 			{
-				cout<<setOfPoints[i].first<<" "<<setOfPoints[i].second<<endl;
+				cout << setOfPoints[i].first << " " << setOfPoints[i].second << endl;
 			}
 		}
 
@@ -96,15 +96,15 @@ double findDist(const Point& p1,const Point& p2)
 	return (p2.first - p1.first)*(p2.first - p1.first) + (p2.second - p1.second)*(p2.second - p1.second);
 }
 
-size_t findClosestCluster(vector<Cluster> c, const Point& p)
+size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
 {
 	//get the max value of double type
-	double currentDist = findDist(p, c[0].getCenter());
+	double currentDist = findDist(p, clusters[0].getCenter());
 	size_t index = 0;
 	//use for loop to find the index
-	for(size_t i = 1; i < c.size(); ++i)
+	for(size_t i = 1; i < clusters.size(); ++i)
 	{
-		double dist = findDist(p,c[i].getCenter());
+		double dist = findDist(p,clusters[i].getCenter());
 		if(currentDist > dist)
 		{
 			currentDist = dist;
@@ -124,7 +124,7 @@ Point findCenter(const vector<Point>& points)
 		double temp = 0;
 		for(size_t j = 0; j < points.size(); ++j)
 		{
-			temp += findDist(points[i],points[j]);
+			temp += findDist(points[i], points[j]);
 		}
 		if(minDist > temp)
 		{
@@ -135,29 +135,29 @@ Point findCenter(const vector<Point>& points)
 	return points[index];
 }
 
-void clusterize(vector<Cluster>& c,vector<Point> points)
+void clusterize(vector<Cluster>& clusters, vector<Point> points)
 {
 	bool swap = false;
-	for(size_t i = 0; i < c.size(); ++i)
+	for(size_t i = 0; i < clusters.size(); ++i)
 	{
-		Point currentCenter = c[i].getCenter();
-		vector<Point> currentPoints = c[i].getSetOfPoints();
+		Point currentCenter = clusters[i].getCenter();
+		vector<Point> currentPoints = clusters[i].getSetOfPoints();
 		Point newCenter = findCenter(currentPoints);
 		if(!comparePoints(newCenter, currentCenter))
 		{
-			c[i].setCenter(newCenter);	
+			clusters[i].setCenter(newCenter);	
 			//check if a point will change it's cluster
-			vector<Point> set = c[i].getSetOfPoints();
+			vector<Point> set = clusters[i].getSetOfPoints();
 			for(auto it = set.begin(); it != set.end(); ++it)
 			{
 				//check if the cluster is the same
-				size_t index = findClosestCluster(c, *it);
+				size_t index = findClosestCluster(clusters, *it);
 				if(i != index)
 				{
 					//the clusters are different
 					//change the cluster
-					c[index].addPoint(*it);
-					c[i].removePoint(*it);
+					clusters[index].addPoint(*it);
+					clusters[i].removePoint(*it);
 					//the point change it's cluster
 					//we have a swap
 					//repeat the algorithm
@@ -168,13 +168,14 @@ void clusterize(vector<Cluster>& c,vector<Point> points)
 	}
 	if(swap)
 	{
-		clusterize(c, points);
+		//Call the function recursively
+		clusterize(clusters, points);
 	}
-	//We have no change in the clusters center
+	//No change in the points
 	//Everything is done!
 }
 
-void writeToFile(const string& filename,const vector<Cluster>& clusters)
+void writeToFile(const string& filename, const vector<Cluster>& clusters)
 {
 	ofstream file(filename.c_str(), ofstream::out);
 	for(size_t i = 0; i < clusters.size(); ++i)
@@ -195,7 +196,7 @@ int main()
 	//Create a vector to store all the points that we will read from the file
 	vector<Point> points;
 	//Open a file that contains a set of points
-	ifstream filePoints("test.txt",ifstream::in);
+	ifstream filePoints("test.txt", ifstream::in);
 	if(filePoints != nullptr)
 	{
 		//The file exists and it is open
@@ -203,7 +204,7 @@ int main()
 	   	//Read the file content
 	   	//We asume that the file data is correctly given
 		Point temp;
-		while(filePoints>>temp.first>>temp.second)
+		while(filePoints >> temp.first >> temp.second)
 		{
 			//Reading file line by line
 			points.push_back(temp);
@@ -237,7 +238,7 @@ int main()
 		{
 			//get a random k points from the vector of points
 			size_t pointIndex = rand()%points.size();
-			if(find(pointsIndexes.begin(),pointsIndexes.end(),pointIndex) == pointsIndexes.end())
+			if(find(pointsIndexes.begin(), pointsIndexes.end(), pointIndex) == pointsIndexes.end())
 			{
 				//The point is not a center of a cluster
 				pointsIndexes.push_back(pointIndex);
@@ -251,7 +252,7 @@ int main()
 				i--;
 			}
 		}
-		for(auto it = points.begin();it != points.end(); ++it)
+		for(auto it = points.begin(); it != points.end(); ++it)
 		{
 			//find the closest cluster center for that point
 			//add the point to that cluster set of points
