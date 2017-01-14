@@ -114,14 +114,14 @@ size_t findClosestCluster(vector<Cluster> c, const Point& p)
 	return index;
 }
 
-Point findCenter(const vector<Point>& points,const Point& center)
+Point findCenter(const vector<Point>& points)
 {
 	//calculate for the other points
 	double minDist = numeric_limits<double>::max();
 	int index = 0;
 	for(size_t i = 0; i < points.size(); ++i)
 	{
-		double temp = findDist(center, points[i]);
+		double temp = 0;
 		for(size_t j = 0; j < points.size(); ++j)
 		{
 			temp += findDist(points[i],points[j]);
@@ -131,16 +131,6 @@ Point findCenter(const vector<Point>& points,const Point& center)
 			minDist = temp;
 			index = i;
 		}
-	}
-	//calculate for the center now
-	double temp = 0;
-	for(auto it = points.begin(); it != points.end(); ++it)
-	{
-		temp += findDist(center, *it);
-	}
-	if(minDist > temp)
-	{
-		return center;
 	}
 	return points[index];
 }
@@ -152,12 +142,10 @@ void clusterize(vector<Cluster>& c,vector<Point> points)
 	{
 		Point currentCenter = c[i].getCenter();
 		vector<Point> currentPoints = c[i].getSetOfPoints();
-		Point newCenter = findCenter(currentPoints, currentCenter);
+		Point newCenter = findCenter(currentPoints);
 		if(!comparePoints(newCenter, currentCenter))
 		{
-			c[i].addPoint(currentCenter);
-			c[i].setCenter(newCenter);
-			c[i].removePoint(newCenter);
+			c[i].setCenter(newCenter);	
 			//check if a point will change it's cluster
 			vector<Point> set = c[i].getSetOfPoints();
 			for(auto it = set.begin(); it != set.end(); ++it)
@@ -192,7 +180,6 @@ void writeToFile(const string& filename,const vector<Cluster>& clusters)
 	for(size_t i = 0; i < clusters.size(); ++i)
 	{
 		file << i + 1<<": " << endl;
-		file << "Center: " << clusters[i].getCenter().first<<" " << clusters[i].getCenter().second << endl;
 		vector<Point> points = clusters[i].getSetOfPoints();
 		for(auto it = points.begin(); it != points.end(); ++it)
 		{
@@ -266,24 +253,6 @@ int main()
 		}
 		for(auto it = points.begin();it != points.end(); ++it)
 		{
-			bool hasPoint = false;
-			//find if the point is a center of a cluster
-			for(size_t i = 0; i < clusters.size(); ++i)
-			{
-				//Check if the point is already a center of a cluster
-				//If the point is a center
-				//Do not add it to the set of points of that cluster
-				if(*it == clusters[i].getCenter())
-				{
-					hasPoint = true;
-					break;
-				}
-			}
-			if(hasPoint)
-			{
-				continue;
-			}
-			//add all the points only if they are not the center of a cluster
 			//find the closest cluster center for that point
 			//add the point to that cluster set of points
 			size_t index = findClosestCluster(clusters, *it);
