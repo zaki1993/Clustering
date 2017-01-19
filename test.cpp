@@ -4,6 +4,9 @@
 
 using namespace std;
 
+std::vector<unsigned char> img;
+unsigned w, h;	
+
 std::vector<unsigned char> decodeOneStep(const char* filename)
 {
     std::vector<unsigned char> image;
@@ -20,7 +23,7 @@ std::vector<unsigned char> decodeOneStep(const char* filename)
         img = image;
         w = width;
         h = height;
-        cout << "Success" << endl;
+        cout << "Success: " << filename << endl;
     }
     return image;
 }
