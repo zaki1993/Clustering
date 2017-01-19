@@ -8,7 +8,9 @@
 #include <cmath> //abs
 #include <string>
 #include <limits> //numeric_limits
-#include "lodepng.h"
+
+#include "lodepng/lodepng.h"
+#include "lodepng/lodepng.cpp" // include both files due to link errors
 
 using std::cout;
 using std::cin;
@@ -22,48 +24,76 @@ using std::string;
 using std::numeric_limits;
 
 // -std=c++11 needed for Linux
-using Point = pair<double, double>;
-template <class PARAM_TYPE, class RETURN_TYPE>
-using distance = RETURN_TYPE(*)(PARAM_TYPE, PARAM_TYPE);
-bool comparePoints(const Point& p1, const Point& p2)
+template <typename T>
+using Point = pair<T, T>;
+
+//lodepng decoder
+vector<unsigned char> decodeOneStep(const char* filename)
+{
+    vector<unsigned char> image;
+    unsigned width, height;
+
+    //decode
+    unsigned error = lodepng::decode(image, width, height, filename);
+    cout << "w: " << width << " " << "h: " << height << endl;
+
+    //if there's an error, display it
+    if (error){
+    	 cout << "decoder error " << error << ": " <<lodepng_error_text(error) << endl;
+
+    	 //clear the vector
+    	 while(!image.empty()){
+    	 	image.pop_back();
+    	 }
+
+    	 //if there's an error return empty image
+    	 return image;
+    }
+
+    //else return the image
+    return image;
+}
+template <typename T>
+bool comparePoints(const Point<T>& p1, const Point<T>& p2)
 {
 	return (p1.first == p2.first) && (p1.second == p2.second);
 }
 
 // create a Cluster class to store cluster data
 // cluster data: center, set of points
+template <typename T>
 class Cluster{
 	private:
-		Point center;
-		vector<Point> setOfPoints;
+		Point<T> center;
+		vector<Point<T>> setOfPoints;
 	protected:
 	public:
-		Cluster(Point _center)
+		Cluster(Point<T> _center)
 		{
 			center = _center;
 		}
 
-		Point getCenter() const
+		Point<T> getCenter() const
 		{
 			return center;
 		}
 
-		void setCenter(const Point& p)
+		void setCenter(const Point<T>& p)
 		{
 			center = p;
 		}
 
-		vector<Point> getSetOfPoints() const
+		vector<Point<T>> getSetOfPoints() const
 		{
 			return setOfPoints;
 		}
 
-		void addPoint(const Point& p)
+		void addPoint(const Point<T>& p)
 		{
 			setOfPoints.push_back(p);
 		}
 
-		void removePoint(const Point& p)
+		void removePoint(const Point<T>& p)
 		{
 			//find the element position
 			for(size_t i = 0; i < setOfPoints.size(); ++i)
@@ -93,12 +123,14 @@ class Cluster{
 		}
 };
 
-double findDist(const Point& p1,const Point& p2)
+template <typename T>
+double findDist(const Point<T>& p1,const Point<T>& p2)
 {
 	return (p2.first - p1.first)*(p2.first - p1.first) + (p2.second - p1.second)*(p2.second - p1.second);
 }
 
-size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
+template <typename T>
+size_t findClosestCluster(vector<Cluster<T>> clusters, const Point<T>& p)
 {
 	//get the max value of double type
 	double currentDist = findDist(p, clusters[0].getCenter());
@@ -116,7 +148,8 @@ size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
 	return index;
 }
 
-Point findCenter(const vector<Point>& points)
+template <typename T>
+Point<T> findCenter(const vector<Point<T>>& points)
 {
 	//calculate the center of points
 	double minDist = numeric_limits<double>::max();
@@ -137,19 +170,20 @@ Point findCenter(const vector<Point>& points)
 	return points[index];
 }
 
-void clusterize(vector<Cluster>& clusters, vector<Point> points)
+template <typename T>
+void clusterize(vector<Cluster<T>>& clusters, vector<Point<T>> points)
 {
 	bool swap = false;
 	for(size_t i = 0; i < clusters.size(); ++i)
 	{
 		//hold the old center
-		Point currentCenter = clusters[i].getCenter();
+		Point<T> currentCenter = clusters[i].getCenter();
 
 		//hold the set of points
-		vector<Point> currentPoints = clusters[i].getSetOfPoints();
+		vector<Point<T>> currentPoints = clusters[i].getSetOfPoints();
 
 		//find the new center
-		Point newCenter = findCenter(currentPoints);
+		Point<T> newCenter = findCenter(currentPoints);
 
 		//check if the old center and the new center are the same point
 		if(!comparePoints(newCenter, currentCenter))
@@ -158,7 +192,7 @@ void clusterize(vector<Cluster>& clusters, vector<Point> points)
 			//set the new center
 			clusters[i].setCenter(newCenter);	
 			//check if a point will change it's cluster
-			vector<Point> set = clusters[i].getSetOfPoints();
+			vector<Point<T>> set = clusters[i].getSetOfPoints();
 			for(auto it = set.begin(); it != set.end(); ++it)
 			{
 				//check if the cluster is the same
@@ -186,13 +220,14 @@ void clusterize(vector<Cluster>& clusters, vector<Point> points)
 	//Everything is done!
 }
 
-void writeToFile(const string& filename, const vector<Cluster>& clusters)
+template <typename T>
+void writeToFile(const string& filename, const vector<Cluster<T>>& clusters)
 {
 	ofstream file(filename.c_str(), ofstream::out);
 	for(size_t i = 0; i < clusters.size(); ++i)
 	{
 		file << i + 1<<": " << endl;
-		vector<Point> points = clusters[i].getSetOfPoints();
+		vector<Point<T>> points = clusters[i].getSetOfPoints();
 		for(auto it = points.begin(); it != points.end(); ++it)
 		{
 			file << (*it).first << " " << (*it).second << endl;
@@ -205,7 +240,7 @@ int main()
 {	
 	bool fileExist = false;
 	//Create a vector to store all the points that we will read from the file
-	vector<Point> points;
+	vector<Point<double>> points;
 	//Open a file that contains a set of points
 	ifstream filePoints("test.txt", ifstream::in);
 	if(filePoints != nullptr)
@@ -214,7 +249,7 @@ int main()
 		fileExist = true;
 	   	//Read the file content
 	   	//We asume that the file data is correctly given
-		Point temp;
+		Point<double> temp;
 		while(filePoints >> temp.first >> temp.second)
 		{
 			//Reading file line by line
@@ -239,7 +274,7 @@ int main()
 		}while(k <= 0 || k > points.size());
 
 		//create a vector of clusters
-		vector<Cluster> clusters;
+		vector<Cluster<double>> clusters;
 
 		//create a vector of ints that cointains the indexes of the points
 		vector<size_t> pointsIndexes;
@@ -253,7 +288,7 @@ int main()
 			{
 				//The point is not a center of a cluster
 				pointsIndexes.push_back(pointIndex);
-				Cluster temp(points[pointIndex]);
+				Cluster<double> temp(points[pointIndex]);
 
 				//add the center to the set of points
 				temp.addPoint(points[pointIndex]);
@@ -273,7 +308,7 @@ int main()
 			size_t index = findClosestCluster(clusters, *it);
 
 			//get the current cluster set of points
-			vector<Point> currentPoints = clusters[index].getSetOfPoints();
+			vector<Point<double>> currentPoints = clusters[index].getSetOfPoints();
 
 			//check if the point is added to the set of points when we search for cluster center
 			if(find(currentPoints.begin(), currentPoints.end(), *it) == currentPoints.end()){
