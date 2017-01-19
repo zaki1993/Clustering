@@ -8,6 +8,7 @@
 #include <cmath> //abs
 #include <string>
 #include <limits> //numeric_limits
+#include "lodepng.h"
 
 using std::cout;
 using std::cin;
@@ -22,7 +23,8 @@ using std::numeric_limits;
 
 // -std=c++11 needed for Linux
 using Point = pair<double, double>;
-
+template <class PARAM_TYPE, class RETURN_TYPE>
+using distance = RETURN_TYPE(*)(PARAM_TYPE, PARAM_TYPE);
 bool comparePoints(const Point& p1, const Point& p2)
 {
 	return (p1.first == p2.first) && (p1.second == p2.second);
@@ -116,7 +118,7 @@ size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
 
 Point findCenter(const vector<Point>& points)
 {
-	//calculate for the other points
+	//calculate the center of points
 	double minDist = numeric_limits<double>::max();
 	int index = 0;
 	for(size_t i = 0; i < points.size(); ++i)
@@ -140,11 +142,20 @@ void clusterize(vector<Cluster>& clusters, vector<Point> points)
 	bool swap = false;
 	for(size_t i = 0; i < clusters.size(); ++i)
 	{
+		//hold the old center
 		Point currentCenter = clusters[i].getCenter();
+
+		//hold the set of points
 		vector<Point> currentPoints = clusters[i].getSetOfPoints();
+
+		//find the new center
 		Point newCenter = findCenter(currentPoints);
+
+		//check if the old center and the new center are the same point
 		if(!comparePoints(newCenter, currentCenter))
 		{
+			//they are not the same point
+			//set the new center
 			clusters[i].setCenter(newCenter);	
 			//check if a point will change it's cluster
 			vector<Point> set = clusters[i].getSetOfPoints();
@@ -243,6 +254,9 @@ int main()
 				//The point is not a center of a cluster
 				pointsIndexes.push_back(pointIndex);
 				Cluster temp(points[pointIndex]);
+
+				//add the center to the set of points
+				temp.addPoint(points[pointIndex]);
 				clusters.push_back(temp);
 			}
 			else
@@ -257,9 +271,19 @@ int main()
 			//find the closest cluster center for that point
 			//add the point to that cluster set of points
 			size_t index = findClosestCluster(clusters, *it);
-			clusters[index].addPoint(*it);
+
+			//get the current cluster set of points
+			vector<Point> currentPoints = clusters[index].getSetOfPoints();
+
+			//check if the point is added to the set of points when we search for cluster center
+			if(find(currentPoints.begin(), currentPoints.end(), *it) == currentPoints.end()){
+				//the point is not in the set
+				//add the point to the set
+				clusters[index].addPoint(*it);
+			}
 		}
 		//We found our centeres and created k clusters
+
 		clusterize(clusters, points);
 		writeToFile("result.txt", clusters);
 	}
