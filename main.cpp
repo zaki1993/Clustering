@@ -1,100 +1,22 @@
-#include <iostream>
+#include "cluster.h"
 #include <fstream> //std::ifstream, std::ofstream
-#include <vector> //std::vector
-#include <utility> //std::pair
 #include <stdlib.h> //srand, rand 
 #include <time.h> //time 
 #include <algorithm> //std::find
-#include <cmath> //abs
-#include <string>
+#include <string> //std::string
 #include <limits> //numeric_limits
+#include <cmath> //abs
 
-using std::cout;
-using std::cin;
-using std::endl;
-using std::pair;
 using std::ifstream;
 using std::ofstream;
-using std::vector;
 using std::find;
 using std::string;
 using std::numeric_limits;
+using std::cout;
+using std::cin;
+using std::endl;
 
-// -std=c++11 needed for Linux
-
-using Point = pair<double, double>;
-
-bool comparePoints(const Point& p1, const Point& p2)
-{
-	return (p1.first == p2.first) && (p1.second == p2.second);
-}
-
-// create a Cluster class to store cluster data
-// cluster data: center, set of points
-
-class Cluster{
-	private:
-		Point center;
-		vector<Point> setOfPoints;
-	protected:
-	public:
-		Cluster(Point _center)
-		{
-			center = _center;
-		}
-
-		Point getCenter() const
-		{
-			return center;
-		}
-
-		void setCenter(const Point& p)
-		{
-			center = p;
-		}
-
-		vector<Point> getSetOfPoints() const
-		{
-			return setOfPoints;
-		}
-
-		void addPoint(const Point& p)
-		{
-			setOfPoints.push_back(p);
-		}
-
-		void removePoint(const Point& p)
-		{
-			//find the element position
-			for(size_t i = 0; i < setOfPoints.size(); ++i)
-			{
-				if(comparePoints(setOfPoints[i], p))
-				{
-					setOfPoints.erase(setOfPoints.begin() + i);
-					return;
-				}
-			}
-		}
-
-		void printPoints() const
-		{
-			for(size_t i = 0; i < setOfPoints.size(); ++i)
-			{
-				cout << setOfPoints[i].first << " " << setOfPoints[i].second << endl;
-			}
-		}
-
-		void clearCluster()
-		{
-			while(!setOfPoints.empty())
-			{
-				setOfPoints.pop_back();
-			}
-		}
-};
-
-
-double findDist(const Point& p1,const Point& p2)
+double findDist(const Point& p1, const Point& p2)
 {
 	return (p2.first - p1.first)*(p2.first - p1.first) + (p2.second - p1.second)*(p2.second - p1.second);
 }
@@ -107,7 +29,7 @@ size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
 	//use for loop to find the index
 	for(size_t i = 1; i < clusters.size(); ++i)
 	{
-		double dist = findDist(p,clusters[i].getCenter());
+		double dist = findDist(p, clusters[i].getCenter());
 		if(currentDist > dist)
 		{
 			currentDist = dist;
@@ -196,25 +118,20 @@ void writeToFile(const string& filename, const vector<Cluster>& clusters)
 		vector<Point> points = clusters[i].getSetOfPoints();
 		for(auto it = points.begin(); it != points.end(); ++it)
 		{
-			file << (*it).first << " " << (*it).second << endl;
+			file << (*it).first << ' ' << (*it).second << endl;
 		}
 		file << endl;
 	}
 }
 
-int main()
-{	
-	bool fileExist = false;
-	//Create a vector to store all the points that we will read from the file
-	vector<Point> points;
-	//Open a file that contains a set of points
-	ifstream filePoints("test.txt", ifstream::in);
+bool readFile(vector<Point>& points, const string& filename)
+{
+	ifstream filePoints(filename.c_str(), ifstream::in);
 	if(filePoints != nullptr)
-	{
+		{
 		//The file exists and it is open
-		fileExist = true;
 	   	//Read the file content
-	   	//We asume that the file data is correctly given
+	   	//We asume the file data is correctly given
 		Point temp;
 		while(filePoints >> temp.first >> temp.second)
 		{
@@ -224,14 +141,20 @@ int main()
 		//We have successfully read the file
 		//Close the file
 		filePoints.close();
+		return true;
 	}
 	else
 	{
-		fileExist = false;
 		cout<<"The file does not exists!"<<endl;
+		return false;
 	}
+}
 
-	if(fileExist)
+int main()
+{	
+	//Create a vector to store all the points that we will read from the file
+	vector<Point> points;
+	if(readFile(points, "test.txt"))
 	{
 		//The number of clusters
 		size_t k = 0;
