@@ -1,4 +1,4 @@
-#include "cluster.h"
+#include "cluster.cpp"
 #include <fstream> //std::ifstream, std::ofstream
 #include <stdlib.h> //srand, rand 
 #include <time.h> //time 
@@ -60,7 +60,7 @@ Point findCenter(const vector<Point>& points)
 	return points[index];
 }
 
-void clusterize(vector<Cluster>& clusters, vector<Point> points)
+void clusterize(vector<Cluster>& clusters)
 {
 	bool swap = false;
 	for(size_t i = 0; i < clusters.size(); ++i)
@@ -103,7 +103,7 @@ void clusterize(vector<Cluster>& clusters, vector<Point> points)
 	if(swap)
 	{
 		//Call the function recursively
-		clusterize(clusters, points);
+		clusterize(clusters);
 	}
 	//No change in the points
 	//Everything is done!
@@ -208,7 +208,7 @@ int main()
 		}
 		//We found our centeres and created k clusters
 
-		clusterize(clusters, points);
+		clusterize(clusters);
 		writeToFile("result.txt", clusters);
 	}
 	//if the file does not exist quit the program
