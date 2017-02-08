@@ -1,4 +1,4 @@
-#include "cluster.cpp"
+#include "cluster.h"
 #include <fstream> //std::ifstream, std::ofstream
 #include <stdlib.h> //srand, rand 
 #include <time.h> //time 
