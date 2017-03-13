@@ -21,7 +21,7 @@ double findDist(const Point& p1, const Point& p2)
 	return (p2.first - p1.first)*(p2.first - p1.first) + (p2.second - p1.second)*(p2.second - p1.second);
 }
 
-size_t findClosestCluster(vector<Cluster> clusters, const Point& p)
+size_t findClosestCluster(vector<Cluster>& clusters, const Point& p)
 {
 	//get the max value of double type
 	double currentDist = findDist(p, clusters[0].getCenter());
